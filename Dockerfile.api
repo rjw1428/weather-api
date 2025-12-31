@@ -1,0 +1,24 @@
+# Use an official Python runtime as a parent image
+FROM python:3.9-slim
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy the dependencies file to the working directory
+COPY requirements.txt .
+
+# Install any needed packages specified in requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the content of the current directory into the container at /app
+COPY api.py .
+COPY models.py .
+
+# Expose the port the API will run on
+EXPOSE 8000
+
+# Command to run the API using Uvicorn
+# The --host 0.0.0.0 makes the server accessible from outside the container
+# The --proxy-headers flag tells Uvicorn to trust X-Forwarded-For headers
+# The --forwareded-allow-ips is the IP address of the docker container running the reverse proxy
+CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips='192.168.65.1'"]

@@ -1,0 +1,7 @@
+requests
+pymongo
+schedule
+fastapi
+uvicorn
+python-dotenv
+pydantic[email]

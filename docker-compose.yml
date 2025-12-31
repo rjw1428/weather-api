@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo:latest
+    container_name: mongo_weather
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    restart: always
+
+  app:
+    build: .
+    container_name: weather_app
+    depends_on:
+      - mongo
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/
+    restart: always
+
+  api:
+    # rebuild the api service to apply changes
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: weather_api
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mongo
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/
+    restart: always
+
+volumes:
+  mongo-data:
