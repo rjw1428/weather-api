@@ -27,13 +27,20 @@ This script provides a RESTful API to access the data stored in the database. It
 *   **Endpoint for Logs:** Provides an endpoint to view the logs of data fetching attempts.
 *   **Data Validation:** Uses Pydantic models to validate and serialize the data returned by the API.
 
+### `alerter.py` - The Wind Alerter
+
+This script is responsible for the following:
+*   **Scheduling:** Runs a job every day to check for high winds.
+*   **Data Fetching:** Makes HTTP requests to the `api` service to get weather information.
+*   **Wind Alerting:** Sends a notification via a Google Cloud Function if the wind speed is above a certain threshold.
+
 ### `models.py` - Pydantic Models
 
 This file contains the Pydantic models used for data validation and serialization in the `api.py` application. These models define the structure of the weather data returned by the API.
 
 ### `docker-compose.yml` and Dockerfiles
 
-The project is fully containerized using Docker. The `docker-compose.yml` file orchestrates the services, including the `app` data collector, the `api` service, and the `mongo` database. The `Dockerfile` and `Dockerfile.api` are used to build the images for the respective services.
+The project is fully containerized using Docker. The `docker-compose.yml` file orchestrates the services, including the `app` data collector, the `api` service, the `alerter` service, and the `mongo` database. The `Dockerfile`, `Dockerfile.api`, and `Dockerfile.alerter` are used to build the images for the respective services.
 
 ## Data Flow
 

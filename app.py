@@ -1,11 +1,14 @@
-
 import os
 import time
 import requests
 import schedule
+import logging
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 from datetime import datetime
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
 
 # --- Configuration ---
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://mongo:27017/")
@@ -24,13 +27,13 @@ def get_mongo_client():
             client = MongoClient(MONGO_URI)
             # The ismaster command is cheap and does not require auth.
             client.admin.command('ismaster')
-            print("Successfully connected to MongoDB.")
+            logging.info("Successfully connected to MongoDB.")
             return client
         except ConnectionFailure as e:
             retries -= 1
-            print(f"Could not connect to MongoDB: {e}. Retrying in 5 seconds...")
+            logging.error(f"Could not connect to MongoDB: {e}. Retrying in 5 seconds...")
             time.sleep(5)
-    print("Failed to connect to MongoDB after several retries. Exiting.")
+    logging.error("Failed to connect to MongoDB after several retries. Exiting.")
     return None
 
 def fetch_weather_data():
@@ -48,27 +51,27 @@ def fetch_weather_data():
             "error": None,
         }
         try:
-            print(f"Fetching weather data from {WEATHER_URL} (Attempt {attempt_num + 1}/{MAX_RETRIES})")
+            logging.info(f"Fetching weather data from {WEATHER_URL} (Attempt {attempt_num + 1}/{MAX_RETRIES})")
             response = requests.get(WEATHER_URL, timeout=REQUEST_TIMEOUT_SECONDS)
             response.raise_for_status()  # Raises an HTTPError for bad responses (4xx or 5xx)
             
             attempt_info["success"] = True
             attempt_info["status_code"] = response.status_code
             attempts_log.append(attempt_info)
-            print("Successfully fetched weather data.")
+            logging.info("Successfully fetched weather data.")
             return response.json(), attempts_log
         except requests.exceptions.Timeout:
             attempt_info["error"] = "Request timed out"
             attempts_log.append(attempt_info)
-            print(f"Request timed out. Retrying in {RETRY_DELAY_SECONDS} seconds...")
+            logging.warning(f"Request timed out. Retrying in {RETRY_DELAY_SECONDS} seconds...")
             time.sleep(RETRY_DELAY_SECONDS)
         except requests.exceptions.RequestException as e:
             attempt_info["error"] = str(e)
             attempts_log.append(attempt_info)
-            print(f"An error occurred during the request: {e}. Retrying in {RETRY_DELAY_SECONDS} seconds...")
+            logging.error(f"An error occurred during the request: {e}. Retrying in {RETRY_DELAY_SECONDS} seconds...")
             time.sleep(RETRY_DELAY_SECONDS)
 
-    print("Failed to fetch weather data after several attempts.")
+    logging.error("Failed to fetch weather data after several attempts.")
     return None, attempts_log
 
 def weather_job(client):
@@ -84,7 +87,7 @@ def weather_job(client):
         # Save the attempts log
         if attempts_log:
             attempts_collection.insert_many(attempts_log)
-            print("Successfully saved attempt log to MongoDB.")
+            logging.info("Successfully saved attempt log to MongoDB.")
 
         # If weather data is fetched successfully, process and save it
         if weather_data:
@@ -104,9 +107,9 @@ def weather_job(client):
                             {"$set": record},
                             upsert=True
                         )
-                        print(f"Successfully upserted hourly data for {report_date}.")
+                        logging.info(f"Successfully upserted hourly data for {report_date}.")
             except Exception as e:
-                print(f"Failed to write weather data to MongoDB: {e}")
+                logging.error(f"Failed to write weather data to MongoDB: {e}")
 
 def main():
     """
@@ -118,13 +121,13 @@ def main():
         return # Exit if we can't connect to the database
 
     # --- Scheduler Setup ---
-    print("Scheduler started. First job will run in the next hour.")
+    logging.info("Scheduler started. First job will run in the next hour.")
     schedule.every().hour.do(weather_job, client=mongo_client)
     
     # Run the job once immediately on startup
-    print("Performing initial weather data fetch...")
+    logging.info("Performing initial weather data fetch...")
     weather_job(mongo_client)
-    print("Initial fetch complete. Waiting for next scheduled run...")
+    logging.info("Initial fetch complete. Waiting for next scheduled run...")
 
     while True:
         schedule.run_pending()

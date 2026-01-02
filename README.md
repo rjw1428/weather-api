@@ -22,11 +22,12 @@ This project consists of a weather data collector and a FastAPI application that
 
 ## Architecture
 
-The project is composed of three main services orchestrated by Docker Compose:
+The project is composed of four main services orchestrated by Docker Compose:
 
 1.  **`mongo`**: A MongoDB database instance used for storing weather reports.
 2.  **`app`**: A Python application (`app.py`) that acts as a scheduler. It connects to MongoDB, fetches weather data hourly, and saves it to the database.
 3.  **`api`**: A FastAPI application (`api.py`) that connects to MongoDB and exposes API endpoints to retrieve the stored weather reports.
+4.  **`alerter`**: A Python application (`alerter.py`) that runs a daily check for high winds and sends a notification if the wind speed is above a certain threshold.
 
 ```
 +----------------+       +----------------+       +----------------+
@@ -36,10 +37,10 @@ The project is composed of three main services orchestrated by Docker Compose:
                                    ^
                                    |
                                    v
-                             +----------------+
-                             |      api       |
-                             |  (FastAPI App) |
-                             +----------------+
+                             +----------------+       +-------------------+
+                             |      api       |       |      alerter      |
+                             |  (FastAPI App) |       | (Wind Alerter)    |
+                             +----------------+       +-------------------+
                                    ^
                                    |
                                    v
@@ -126,9 +127,11 @@ docker-compose down
 .
 ├── api.py            # FastAPI application exposing weather data
 ├── app.py            # Hourly weather data collector and scheduler
+├── alerter.py        # High wind alerter application
 ├── models.py         # Pydantic models for data validation
-├── docker-compose.yml # Defines and orchestrates Docker services (mongo, app, api)
+├── docker-compose.yml # Defines and orchestrates Docker services (mongo, app, api, alerter)
 ├── Dockerfile        # Dockerfile for the 'app' service (weather collector)
 ├── Dockerfile.api    # Dockerfile for the 'api' service (FastAPI)
+├── Dockerfile.alerter # Dockerfile for the 'alerter' service (wind alerter)
 └── requirements.txt  # Python dependencies for both app and api services
 ```

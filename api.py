@@ -7,8 +7,11 @@ from datetime import datetime
 from bson import ObjectId
 import os
 import time
+import logging
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 from models import Hourly
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 app = FastAPI()
 app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="192.168.65.1")
@@ -20,8 +23,8 @@ async def log_ip_address(request: Request, call_next):
     """
     timestamp = datetime.now()
     client_ip = request.client.host
-    print(request.headers.get('X-Forwarded-For'))
-    print(f"{timestamp} = API: Request from Client IP: {client_ip}")
+    logging.info(request.headers.get('X-Forwarded-For'))
+    logging.info(f"{timestamp} = API: Request from Client IP: {client_ip}")
     
     # Continue processing the request
     response = await call_next(request)
@@ -50,12 +53,12 @@ def get_mongo_client() -> MongoClient:
         try:
             client = MongoClient(MONGO_URI)
             client.admin.command('ismaster')
-            print("API: Successfully connected to MongoDB.")
+            logging.info("API: Successfully connected to MongoDB.")
             mongo_client_instance = client
             return client
         except ConnectionFailure as e:
             retries -= 1
-            print(f"API: Could not connect to MongoDB: {e}. Retrying in 5 seconds...")
+            logging.error(f"API: Could not connect to MongoDB: {e}. Retrying in 5 seconds...")
             time.sleep(5)
     raise ConnectionFailure("API: Failed to connect to MongoDB after several retries.")
 
@@ -67,7 +70,7 @@ async def startup_db_client():
     try:
         get_mongo_client()
     except ConnectionFailure as e:
-        print(f"API: Startup failed due to MongoDB connection issue: {e}")
+        logging.error(f"API: Startup failed due to MongoDB connection issue: {e}")
         raise
 
 @app.on_event("shutdown")
@@ -78,7 +81,7 @@ async def shutdown_db_client():
     global mongo_client_instance
     if mongo_client_instance:
         mongo_client_instance.close()
-        print("API: MongoDB connection closed.")
+        logging.info("API: MongoDB connection closed.")
 
 # Pydantic models for response data validation and serialization
 
