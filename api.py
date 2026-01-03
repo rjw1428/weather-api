@@ -129,6 +129,27 @@ class WeatherReport(BaseModel):
 async def read_root():
     return {"message": "Weather Data API."}
 
+@app.get("/weather/latest", response_model=WeatherReport)
+async def get_latest_report():
+    """
+    Retrieve the most recent weather report.
+    """
+    try:
+        client = get_mongo_client()
+        db = client[DB_NAME]
+        collection = db[HOURLY_REPORTS_COLLECTION_NAME]
+
+        # Sort by the recording timestamp to get the truly latest report
+        latest_report = collection.find_one(sort=[("timestamp_recorded_utc", -1)])
+        if latest_report:
+            return latest_report
+        raise HTTPException(status_code=404, detail="No weather reports found.")
+    except ConnectionFailure as e:
+        raise HTTPException(status_code=500, detail=f"Database connection error: {e}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {e}")
+
+
 @app.get("/weather/{date}", response_model=WeatherReport)
 async def get_report_by_date(date: str):
     """
@@ -143,25 +164,6 @@ async def get_report_by_date(date: str):
         if report:
             return report
         raise HTTPException(status_code=404, detail=f"No weather report found for date: {date}")
-    except ConnectionFailure as e:
-        raise HTTPException(status_code=500, detail=f"Database connection error: {e}")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {e}")
-
-@app.get("/weather/latest", response_model=WeatherReport)
-async def get_latest_report():
-    """
-    Retrieve the most recent weather report.
-    """
-    try:
-        client = get_mongo_client()
-        db = client[DB_NAME]
-        collection = db[HOURLY_REPORTS_COLLECTION_NAME]
-
-        latest_report = collection.find_one(sort=[("date", -1)])
-        if latest_report:
-            return latest_report
-        raise HTTPException(status_code=404, detail="No weather reports found.")
     except ConnectionFailure as e:
         raise HTTPException(status_code=500, detail=f"Database connection error: {e}")
     except Exception as e:
