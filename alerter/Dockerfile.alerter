@@ -2,6 +2,10 @@
 # Use an official Python runtime as a parent image
 FROM python:3.9-slim
 
+# Set environment variables for cron schedule with default values
+ENV ALERT_CRON_HOUR="10"
+ENV ALERT_CRON_MINUTE="0"
+
 # Set the working directory in the container
 WORKDIR /usr/src/app
 

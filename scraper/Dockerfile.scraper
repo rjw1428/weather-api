@@ -11,7 +11,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the content of the current directory into the container at /app
-COPY app.py models.py .
+COPY scraper.py . 
 
 # Specify the command to run on container start
-CMD ["python", "-u", "app.py"]
+CMD ["python", "-u", "scraper.py"]

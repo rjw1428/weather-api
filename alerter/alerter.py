@@ -123,9 +123,11 @@ def daily_weather_alert():
 if __name__ == "__main__":
     scheduler = BlockingScheduler(timezone=timezone('America/New_York'))
     # Schedule the job to run every day at 10:00 EST, with grace time to run even if missed
-    scheduler.add_job(daily_weather_alert, 'cron', hour=11, minute=5, misfire_grace_time=24*3600, coalesce=True)
+    alert_cron_hour = int(os.getenv("ALERT_CRON_HOUR", "10"))
+    alert_cron_minute = int(os.getenv("ALERT_CRON_MINUTE", "0"))
+    scheduler.add_job(daily_weather_alert, 'cron', hour=alert_cron_hour, minute=alert_cron_minute, misfire_grace_time=24*3600, coalesce=True)
 
-    logging.info("Scheduler started. Waiting for the next scheduled run at 10:00 AM.")
+    logging.info(f"Scheduler started. Waiting for the next scheduled run at {alert_cron_hour:02d}:{alert_cron_minute:02d} AM.")
     try:
         scheduler.start()
     except (KeyboardInterrupt, SystemExit):
