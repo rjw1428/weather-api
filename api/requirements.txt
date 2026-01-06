@@ -7,3 +7,7 @@ python-dotenv
 pydantic[email]
 apscheduler
 pytz
+pytest
+httpx
+asgi-lifespan
+pytest-asyncio

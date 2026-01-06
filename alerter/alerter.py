@@ -41,7 +41,7 @@ def daily_weather_alert():
     today = datetime.now().strftime('%Y-%m-%d')
     tomorrow = (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d')
     
-    wind_threshold = 15
+    wind_threshold = int(os.getenv("WINDSPEED_ThRESHOLD", "15"))
     cuttoff_time = 900
 
     hourly_wind_today = []
@@ -58,7 +58,7 @@ def daily_weather_alert():
         hourly_wind_tomorrow = [{'time': h['time'], 'windspeed': h['windspeedMiles']} for h in weather_tomorrow['hourly'] if int(h['time']) < cuttoff_time]
     
     hourly_winds = hourly_wind_today + hourly_wind_tomorrow
-    filtered_winds = [h for h in hourly_winds if int(h['windspeed']) <= wind_threshold]
+    filtered_winds = [h for h in hourly_winds if int(h['windspeed']) >= wind_threshold]
 
     logging.info("--- Filtered Weather ---")
     logging.info(filtered_winds)

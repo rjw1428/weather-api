@@ -10,9 +10,22 @@ COPY requirements.txt .
 # Install any needed packages specified in requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Invalidate Docker cache for api.py and models.py
+RUN touch api.py models.py
+
 # Copy the content of the current directory into the container at /app
 COPY api.py .
 COPY models.py .
+
+# Copy test-related files
+COPY tests/ ./tests/
+COPY pytest.ini .
+
+# Run tests
+RUN python3 -m pytest
+
+# Clean up test-related files
+RUN rm -rf tests/ pytest.ini
 
 # Expose the port the API will run on
 EXPOSE 8000

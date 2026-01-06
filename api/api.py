@@ -3,7 +3,7 @@ from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 from pydantic import BaseModel, Field, validator
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, date, timedelta
 from bson import ObjectId
 import os
 import time
@@ -132,40 +132,43 @@ async def read_root():
 @app.get("/weather/latest", response_model=WeatherReport)
 async def get_latest_report():
     """
-    Retrieve the most recent weather report.
+    Retrieve the most recent weather report (today's report).
     """
-    try:
-        client = get_mongo_client()
-        db = client[DB_NAME]
-        collection = db[HOURLY_REPORTS_COLLECTION_NAME]
-
-        # Sort by the recording timestamp to get the truly latest report
-        latest_report = collection.find_one(sort=[("timestamp_recorded_utc", -1)])
-        if latest_report:
-            return latest_report
-        raise HTTPException(status_code=404, detail="No weather reports found.")
-    except ConnectionFailure as e:
-        raise HTTPException(status_code=500, detail=f"Database connection error: {e}")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {e}")
+    return await get_report_by_date("today")
 
 
-@app.get("/weather/{date}", response_model=WeatherReport)
-async def get_report_by_date(date: str):
+@app.get("/weather/{date_str}", response_model=WeatherReport)
+async def get_report_by_date(date_str: str):
     """
     Retrieve a weather report for a specific date.
+    Also accepts keywords: "today", "tomorrow", "yesterday".
     """
     try:
+        target_date = None
+        if date_str == "today":
+            target_date = date.today()
+        elif date_str == "tomorrow":
+            target_date = date.today() + timedelta(days=1)
+        elif date_str == "yesterday":
+            target_date = date.today() - timedelta(days=1)
+        else:
+            try:
+                target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Invalid date format. Please use YYYY-MM-DD or keywords: today, tomorrow, yesterday.")
+
         client = get_mongo_client()
         db = client[DB_NAME]
         collection = db[HOURLY_REPORTS_COLLECTION_NAME]
 
-        report = collection.find_one({"date": date})
+        report = collection.find_one({"date": target_date.strftime("%Y-%m-%d")})
         if report:
             return report
-        raise HTTPException(status_code=404, detail=f"No weather report found for date: {date}")
+        raise HTTPException(status_code=404, detail=f"No weather report found for date: {date_str}")
     except ConnectionFailure as e:
         raise HTTPException(status_code=500, detail=f"Database connection error: {e}")
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {e}")
 

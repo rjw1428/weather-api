@@ -50,20 +50,6 @@ services:
         max-size: "200k"
         max-file: "5"
 
-  alerter:
-    build:
-      context: alerter/
-      dockerfile: Dockerfile.alerter
-    container_name: weather_alerter
-    depends_on:
-      - api
-    restart: always
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "200k"
-        max-file: "5"
-
   frontend:
     image: nginx:latest
     container_name: weather_frontend
