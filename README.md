@@ -22,12 +22,13 @@ This project consists of a weather data collector and a FastAPI application that
 
 ## Architecture
 
-The project is composed of four main services orchestrated by Docker Compose:
+The project is composed of five main services orchestrated by Docker Compose:
 
 1.  **`mongo`**: A MongoDB database instance used for storing weather reports.
 2.  **`app`**: A Python application (`app.py`) that acts as a scheduler. It connects to MongoDB, fetches weather data hourly, and saves it to the database.
 3.  **`api`**: A FastAPI application (`api.py`) that connects to MongoDB and exposes API endpoints to retrieve the stored weather reports.
 4.  **`alerter`**: A Python application (`alerter.py`) that runs a daily check for high winds and sends a notification if the wind speed is above a certain threshold.
+5.  **`mcp`**: A Python application (`mcp/main.py`) that provides a tool-based interface to the API.
 
 ```
 +----------------+       +----------------+       +----------------+
@@ -38,8 +39,8 @@ The project is composed of four main services orchestrated by Docker Compose:
                                    |
                                    v
                              +----------------+       +-------------------+
-                             |      api       |       |      alerter      |
-                             |  (FastAPI App) |       | (Wind Alerter)    |
+                             |      api       | ----> |        mcp        |
+                             |  (FastAPI App) |       | (MCP Server)      |
                              +----------------+       +-------------------+
                                    ^
                                    |
@@ -103,6 +104,9 @@ Follow these instructions to get a copy of the project up and running on your lo
     -   The API will be available at `http://localhost:8000`.
     -   Access the interactive API documentation (Swagger UI) at `http://localhost:8000/docs`.
 
+-   **MCP Server:**
+    -   The MCP server will be available at `http://localhost:8001`.
+
 -   **MongoDB (Optional):**
     -   The MongoDB instance is exposed on port `27017` on your host machine. You can connect to it using a MongoDB client (e.g., MongoDB Compass, `mongosh`) at `mongodb://localhost:27017/`.
     -   The database name is `weather_db` and the collection names are `hourly_reports` and `attempts`.
@@ -125,13 +129,14 @@ docker-compose down
 
 ```
 .
-├── api.py            # FastAPI application exposing weather data
-├── app.py            # Hourly weather data collector and scheduler
-├── alerter.py        # High wind alerter application
-├── models.py         # Pydantic models for data validation
-├── docker-compose.yml # Defines and orchestrates Docker services (mongo, app, api, alerter)
+├── api               # FastAPI application exposing weather data
+├── app               # Hourly weather data collector and scheduler
+├── alerter           # High wind alerter application
+├── mcp               # MCP server
+├── docker-compose.yml # Defines and orchestrates Docker services (mongo, app, api, alerter, mcp)
 ├── Dockerfile        # Dockerfile for the 'app' service (weather collector)
 ├── Dockerfile.api    # Dockerfile for the 'api' service (FastAPI)
 ├── Dockerfile.alerter # Dockerfile for the 'alerter' service (wind alerter)
+├── Dockerfile.mcp    # Dockerfile for the 'mcp' service (MCP Server)
 └── requirements.txt  # Python dependencies for both app and api services
 ```

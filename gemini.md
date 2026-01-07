@@ -38,9 +38,15 @@ This script is responsible for the following:
 
 This file contains the Pydantic models used for data validation and serialization in the `api.py` application. These models define the structure of the weather data returned by the API.
 
+### `mcp/main.py` - The MCP Server
+
+This script provides a tool-based interface to the API, allowing for easy integration with other systems. It includes the following features:
+*   **Tool-Based Interface:** Exposes the API endpoints as tools that can be easily called from other applications.
+*   **Log Streaming:** Provides a Server-Sent Events (SSE) stream for real-time monitoring of data fetching attempts.
+
 ### `docker-compose.yml` and Dockerfiles
 
-The project is fully containerized using Docker. The `docker-compose.yml` file orchestrates the services, including the `app` data collector, the `api` service, the `alerter` service, and the `mongo` database. The `Dockerfile`, `Dockerfile.api`, and `Dockerfile.alerter` are used to build the images for the respective services.
+The project is fully containerized using Docker. The `docker-compose.yml` file orchestrates the services, including the `app` data collector, the `api` service, the `alerter` service, the `mcp` service, and the `mongo` database. The `Dockerfile`, `Dockerfile.api`, `Dockerfile.alerter`, and `Dockerfile.mcp` are used to build the images for the respective services.
 
 ## Data Flow
 
@@ -49,3 +55,4 @@ The project is fully containerized using Docker. The `docker-compose.yml` file o
 3.  The `app` service processes the response, extracts the hourly forecast for each day, and saves it to the `hourly_reports` collection in the MongoDB database. The attempt logs are saved in the `attempts` collection.
 4.  The `api` service, running in a separate Docker container, provides endpoints that query the MongoDB database.
 5.  A client can make HTTP requests to the `api` service to retrieve the stored weather data.
+6.  The `mcp` service, running in a separate Docker container, provides a tool-based interface to the `api` service.

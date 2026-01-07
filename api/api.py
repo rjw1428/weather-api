@@ -125,6 +125,21 @@ class WeatherReport(BaseModel):
             return str(v)
         return v
 
+@app.get("/health")
+async def health_check():
+    """
+    Health check endpoint for the API service.
+    Checks MongoDB connection.
+    """
+    try:
+        client = get_mongo_client()
+        client.admin.command('ismaster') # Check if MongoDB is reachable
+        return {"status": "healthy", "database": "reachable"}
+    except ConnectionFailure:
+        raise HTTPException(status_code=500, detail="Database connection failed")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {e}")
+
 @app.get("/")
 async def read_root():
     return {"message": "Weather Data API."}
